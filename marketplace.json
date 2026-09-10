@@ -1,7 +1,7 @@
 {
   "name": "brand-ai-readiness-audit",
   "version": "1.0.0",
-  "description": "Enterprise-grade Agent Skill Marketplace auditing off-site AI discoverability, fact corroboration, and on-site context retention using non-obvious engineering heuristics.",
+  "description": "Comprehensive audit marketplace evaluating off-site discoverability, on-site engagement, and context retention for AI assistants.",
   "skills": [
     {
       "id": "audit-orchestrator",
@@ -17,8 +17,12 @@
       "path": "skills/discovery-audit"
     },
     {
-      "id": "freshness-corroboration",
-      "path": "skills/freshness-corroboration"
+      "id": "crawl-access-audit",
+      "path": "skills/crawl-access-audit"
+    },
+    {
+      "id": "freshness-audit",
+      "path": "skills/freshness-audit"
     },
     {
       "id": "engagement-audit",

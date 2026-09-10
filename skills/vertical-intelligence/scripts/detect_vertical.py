@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Vertical Intelligence Sub-skill Script.
-Auto-detects site vertical (e-commerce, airline, saas, hospitality, news, general)
-using HTML structural signals, Schema.org types, meta tags, and URL patterns.
+Vertical Intelligence Skill Script
+Detects whether a target domain is E-Commerce, Airline, SaaS, Hospitality, News, or General.
+Inspects Schema.org JSON-LD types, key HTML signals, and meta tags.
 """
 
-import os
+
 import sys
 import json
+import os
 
-# Ensure shared utils can be imported relative to skills directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from shared.utils import safe_fetch, parse_html_content
+# Add parent shared folder to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../shared')))
+from utils import safe_fetch, parse_html_content
 
 
 def detect_vertical(target_url):
@@ -19,88 +20,61 @@ def detect_vertical(target_url):
     if fetch_res['error'] or not fetch_res['body']:
         return {
             "vertical": "general",
-            "confidence": 0.3,
-            "evidence": f"Failed to fetch content or empty response ({fetch_res['error']}). Defaulted to general."
+            "confidence": "low",
+            "reason": f"Fetch failed: {fetch_res['error'] or 'Empty body'}"
         }
 
-    html = fetch_res['body']
-    parser = parse_html_content(html)
-    url_lower = target_url.lower()
+    parsed = parse_html_content(fetch_res['body'])
+    body_text_lower = fetch_res['body'].lower()
 
-    scores = {
-        "e-commerce": 0,
-        "airline": 0,
-        "saas": 0,
-        "hospitality": 0,
-        "news": 0
-    }
-
-    # 1. Schema.org Entity Inspection
-    for block in parser.json_ld_blocks:
+    # 1. Inspect Schema.org JSON-LD Blocks for Explicit Types
+    schema_types = set()
+    for block in parsed.json_ld_blocks:
         if isinstance(block, dict):
-            schema_type = str(block.get('@type', '')).lower()
-            if 'product' in schema_type or 'offer' in schema_type or 'store' in schema_type:
-                scores['e-commerce'] += 5
-            elif 'flight' in schema_type or 'airline' in schema_type:
-                scores['airline'] += 5
-            elif 'softwareapplication' in schema_type or 'techarticle' in schema_type:
-                scores['saas'] += 5
-            elif 'hotel' in schema_type or 'lodgingbusiness' in schema_type or 'resort' in schema_type:
-                scores['hospitality'] += 5
-            elif 'newsarticle' in schema_type or 'reportage' in schema_type:
-                scores['news'] += 5
+            stype = block.get('@type')
+            if isinstance(stype, str):
+                schema_types.add(stype.lower())
+            elif isinstance(stype, list):
+                for st in stype:
+                    if isinstance(st, str):
+                        schema_types.add(st.lower())
 
-    # 2. Structural & Text Keyword Signals
-    html_lower = html.lower()
-    
-    # E-commerce indicators
-    if any(k in html_lower for k in ['add to cart', 'add to bag', 'checkout', 'shopping-cart', 'price', 'sku']):
-        scores['e-commerce'] += 3
-    
-    # Airline indicators
-    if any(k in html_lower for k in ['flight', 'book flight', 'boarding pass', 'round trip', 'one way', 'airline']):
-        scores['airline'] += 3
+    # Vertical Signatures Mapping
+    if any(st in schema_types for st in ['flight', 'airline', 'flightreservation']):
+        return {"vertical": "airline", "confidence": "high", "reason": "Explicit Flight/Airline Schema.org type detected"}
 
-    # SaaS indicators
-    if any(k in html_lower for k in ['pricing plans', 'free trial', 'api docs', 'sign up free', 'documentation', 'enterprise plan']):
-        scores['saas'] += 3
+    if any(st in schema_types for st in ['product', 'offer', 'itemlist', 'shoppingcart', 'store']):
+        return {"vertical": "e-commerce", "confidence": "high", "reason": "Explicit Product/Offer/ItemList Schema.org type detected"}
 
-    # Hospitality indicators
-    if any(k in html_lower for k in ['check-in', 'check-out', 'book room', 'amenities', 'guests', 'suite']):
-        scores['hospitality'] += 3
+    if any(st in schema_types for st in ['hotel', 'lodgingbusiness', 'hotelroom', 'reservation']):
+        return {"vertical": "hospitality", "confidence": "high", "reason": "Explicit Hotel/Lodging Schema.org type detected"}
 
-    # News indicators
-    if any(k in html_lower for k in ['editorial', 'breaking news', 'published on', 'journalist', 'press release', 'opinion']):
-        scores['news'] += 3
+    if any(st in schema_types for st in ['newsarticle', 'reportagearticle']):
+        return {"vertical": "news", "confidence": "high", "reason": "Explicit NewsArticle Schema.org type detected"}
 
-    # 3. URL heuristics
-    if any(k in url_lower for k in ['shop', 'store', 'cart']):
-        scores['e-commerce'] += 2
-    elif any(k in url_lower for k in ['fly', 'air', 'airline', 'flights']):
-        scores['airline'] += 2
-    elif any(k in url_lower for k in ['app', 'io', 'saas', 'docs']):
-        scores['saas'] += 2
-    elif any(k in url_lower for k in ['hotel', 'resort', 'stay', 'booking']):
-        scores['hospitality'] += 2
+    if any(st in schema_types for st in ['softwareapplication', 'saas', 'techarticle']):
+        return {"vertical": "saas", "confidence": "high", "reason": "Explicit SoftwareApplication Schema.org type detected"}
 
-    best_vertical = max(scores, key=scores.get)
-    highest_score = scores[best_vertical]
+    # 2. Heuristic Keyword & Semantic DOM Fallbacks
+    if any(term in body_text_lower for term in ['flight', 'boarding pass', 'origin airport', 'destination airport', 'book flight']):
+        return {"vertical": "airline", "confidence": "medium", "reason": "Airline semantic keywords detected in DOM"}
 
-    if highest_score < 3:
-        return {
-            "vertical": "general",
-            "confidence": 0.5,
-            "evidence": "Low keyword/schema signal variance across standard verticals."
-        }
+    if any(term in body_text_lower for term in ['add to cart', 'buy now', 'checkout', 'free shipping', 'sku']):
+        return {"vertical": "e-commerce", "confidence": "medium", "reason": "E-Commerce transactional triggers detected"}
 
-    return {
-        "vertical": best_vertical,
-        "confidence": min(1.0, round(highest_score / 10.0, 2)),
-        "evidence": f"Detected strong structural and schema indicators for vertical: '{best_vertical}' (signal weight score: {highest_score})."
-    }
+    if any(term in body_text_lower for term in ['book a room', 'check-in date', 'check-out date', 'guests', 'amenities']):
+        return {"vertical": "hospitality", "confidence": "medium", "reason": "Hospitality booking controls detected"}
+
+    if any(term in body_text_lower for term in ['free trial', 'pricing plans', 'api documentation', 'enterprise tier', 'saas']):
+        return {"vertical": "saas", "confidence": "medium", "reason": "SaaS trial/pricing keywords detected"}
+
+    if any(term in body_text_lower for term in ['editorial', 'breaking news', 'journalism', 'press release', 'published on']):
+        return {"vertical": "news", "confidence": "medium", "reason": "Publishing/News terms detected"}
+
+    return {"vertical": "general", "confidence": "low", "reason": "No strong vertical-specific schemas or keywords identified"}
 
 
 if __name__ == '__main__':
     target = sys.argv[1] if len(sys.argv) > 1 else "https://example.com"
-    res = detect_vertical(target)
-    print(json.dumps(res, indent=2))
+    result = detect_vertical(target)
+    print(json.dumps(result, indent=2))
