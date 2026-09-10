@@ -1,0 +1,115 @@
+{
+  "site": "www.toyota.com",
+  "audited_at": "2026-09-10T06:50:25Z",
+  "vertical": "airline",
+  "summary": {
+    "total_findings": 8,
+    "critical": 1,
+    "high": 6,
+    "medium": 1
+  },
+  "findings": [
+    {
+      "id": "DISC-001",
+      "title": "Missing Machine-Readable /llms.txt Endpoint",
+      "severity": "high",
+      "evidence": "GET https://www.toyota.com/llms.txt returned HTTP status FAILED",
+      "suggested_action": {
+        "summary": "Deploy an /llms.txt file providing clean Markdown context for LLM agents",
+        "priority": "high",
+        "impact": "Improves RAG parsing efficiency for AI assistants like Perplexity and ChatGPT",
+        "code_snippet": "# Brand Context\n> Summary of primary product line and key technical specifications.\n\n## Key Documents\n- [Product Catalog](/catalog.md)\n- [API Specs](/api.md)"
+      }
+    },
+    {
+      "id": "DISC-002",
+      "title": "AI Assistants explicitly blocked in robots.txt",
+      "severity": "critical",
+      "evidence": "Found explicit 'Disallow: /' directive for user-agents: perplexitybot, anthropic-ai, gptbot, cohere-ai, claudebot",
+      "suggested_action": {
+        "summary": "Update robots.txt to permit indexing by official AI search bots",
+        "priority": "critical",
+        "impact": "Blocks non-parametric real-time retrieval (RAG) by ChatGPT and Claude",
+        "code_snippet": "User-agent: GPTBot\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /"
+      }
+    },
+    {
+      "id": "DISC-003",
+      "title": "Missing Schema.org Entity Metadata (Brand/ItemList JSON-LD)",
+      "severity": "high",
+      "evidence": "0 JSON-LD blocks containing 'Brand', 'Organization', or 'ItemList' schemas were found",
+      "suggested_action": {
+        "summary": "Embed structured Schema.org JSON-LD to assist entity resolution",
+        "priority": "high",
+        "impact": "Helps AI crawlers extract authoritative entity relationships and product collections",
+        "code_snippet": "<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Brand\",\n  \"name\": \"BrandName\",\n  \"url\": \"https://example.com\"\n}\n</script>"
+      }
+    },
+    {
+      "id": "FRESH-002",
+      "title": "Missing Schema.org dateModified Provenance Timestamp",
+      "severity": "high",
+      "evidence": "JSON-LD graph contains no 'dateModified' attribute to verify factual recency",
+      "suggested_action": {
+        "summary": "Add ISO 8601 'dateModified' property to Organization/Product JSON-LD",
+        "priority": "high",
+        "impact": "Overrides legacy cached vector embeddings in AI model memory with authoritative timestamps",
+        "code_snippet": "\"dateModified\": \"2026-09-10T00:00:00Z\""
+      }
+    },
+    {
+      "id": "FRESH-003",
+      "title": "Deficit in Cross-Domain Corroboration Graph (Missing Wikidata sameAs)",
+      "severity": "high",
+      "evidence": "Found 0 sameAs links, but 0 point to Wikidata, Wikipedia, or Crunchbase",
+      "suggested_action": {
+        "summary": "Add 'sameAs' array pointing to verified Wikidata and Crunchbase entity IDs",
+        "priority": "high",
+        "impact": "Increases cross-node consensus score, enabling AI models to validate entity rebranding",
+        "code_snippet": "\"sameAs\": [\n  \"https://www.wikidata.org/wiki/Q12345\",\n  \"https://www.crunchbase.com/organization/brand\"\n]"
+      }
+    },
+    {
+      "id": "ENGAGE-001",
+      "title": "Stateless Referral Routing (Missing AI Referrer Context Bridge)",
+      "severity": "high",
+      "evidence": "No static DOM scripts or Edge header inspect rules detected for AI referrer domains (e.g., chatgpt.com, perplexity.ai).",
+      "suggested_action": {
+        "summary": "Deploy Edge Middleware / Frontend Context Bridge to inspect Referer headers and render personalized banners.",
+        "priority": "high",
+        "impact": "Eliminates state loss when users click citations, preserving pre-conditioned intent upon site entry.",
+        "code_snippet": "if (document.referrer.includes('chatgpt.com')) {\n  showIntentBanner('Welcome! Here is the Velocity X9 technical summary you asked ChatGPT about.');\n}"
+      }
+    },
+    {
+      "id": "ENGAGE-002",
+      "title": "Missing Heading ID Anchors for Deep AI URL Citation Linking",
+      "severity": "medium",
+      "evidence": "Found 18 headings (<h1-h6>), but 0 have explicit 'id' attributes for URL hash deep-linking.",
+      "suggested_action": {
+        "summary": "Assign explicit, human-readable 'id' attributes to all major section headings.",
+        "priority": "medium",
+        "impact": "Allows AI assistants to construct exact hash citation links (e.g., page.html#specifications) preventing scroll state loss.",
+        "code_snippet": "<h2 id=\"technical-specifications\">Velocity X9 Technical Specifications</h2>"
+      }
+    },
+    {
+      "id": "ENGAGE-003",
+      "title": "Attribute Extraction Hallucination Hazard (Specs Hidden in Accordions/Images)",
+      "severity": "high",
+      "evidence": "Core technical specifications are missing above the fold and trapped inside 38 accordion containers or image files.",
+      "suggested_action": {
+        "summary": "Extract key technical attributes into static, uncollapsed DOM markup using Schema.org/PropertyValue.",
+        "priority": "high",
+        "impact": "Prevents AI assistants from fabricating missing technical metrics during multi-brand comparisons.",
+        "code_snippet": "<div itemprop=\"additionalProperty\" itemscope itemtype=\"https://schema.org/PropertyValue\">\n  <span itemprop=\"name\">heel_drop</span>: <span itemprop=\"value\">10mm</span>\n</div>"
+      }
+    }
+  ],
+  "proactive_recommendations": [
+    "Deploy a root /llms.txt and /llms-full.txt markdown index to provide RAG systems with clean brand context.",
+    "Include high-authority sameAs links (e.g., Wikidata, Wikipedia, Crunchbase) inside Schema.org/Organization JSON-LD markup.",
+    "Embed Schema.org/Flight and Schema.org/Airline structured metadata to enable real-time itinerary and fare parsing by AI assistants.",
+    "Implement dynamic deep URL anchors for direct flight route queries (e.g., /flights/del-bom#schedule)."
+  ]
+}

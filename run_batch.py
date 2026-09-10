@@ -3,7 +3,7 @@ import sys
 import json
 import subprocess
 
-# Define the list of target client domains you wish to audit
+# Define the list of target client domains to audit
 ENTERPRISE_TEST_DOMAINS = [
     # --- E-COMMERCE & RETAIL ---
     "https://www.nike.com",
@@ -61,7 +61,6 @@ ENTERPRISE_TEST_DOMAINS = [
     "https://www.united.com",
     "https://www.aa.com",
     "https://www.southwest.com",
-    "https://www.aa.com",
     "https://www.emirates.com",
     "https://www.qatarairways.com",
     "https://www.singaporeair.com",
@@ -72,9 +71,7 @@ ENTERPRISE_TEST_DOMAINS = [
     "https://www.hilton.com",
     "https://www.hyatt.com",
     "https://www.ihg.com",
-    "https://www.hilton.com",
     "https://www.accor.com",
-    "https://www.hyatt.com",
 
     # --- MEDIA & ENTERTAINMENT ---
     "https://www.netflix.com",
@@ -164,46 +161,40 @@ ENTERPRISE_TEST_DOMAINS = [
     "https://www.adobe.com"
 ]
 
-
-
 OUTPUT_DIR = "client_audit_reports"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-print(f"🚀 Starting AI-Readiness Audit across {len(ADOBE_CLIENT_DOMAINS)} target domains...\n")
+print(f"Starting AI-Readiness Audit across {len(ENTERPRISE_TEST_DOMAINS)} target domains...\n")
 
-for site in ADOBE_CLIENT_DOMAINS:
-    # Generate clean filename from URL
+for site in ENTERPRISE_TEST_DOMAINS:
     clean_name = site.replace("https://", "").replace("http://", "").replace("www.", "").replace("/", "_")
     output_path = os.path.join(OUTPUT_DIR, f"{clean_name}.json")
     
-    print(f"🔍 Auditing: {site} ...")
+    print(f"Auditing: {site} ...")
     
     try:
-        # Run the entrypoint orchestrator script
         proc = subprocess.run(
             [sys.executable, "skills/audit-orchestrator/scripts/synthesize_report.py", site],
             capture_output=True,
             text=True,
-            timeout=45 # 45-second timeout per site
+            timeout=45
         )
         
         if proc.returncode == 0 and proc.stdout.strip():
-            # Parse JSON output from the orchestrator
             report_data = json.loads(proc.stdout)
             
-            # Save report to file
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(report_data, f, indent=2)
                 
-            print(f"   ✅ Saved report: {output_path}")
-            print(f"   📊 Vertical: {report_data.get('vertical')}")
-            print(f"   ⚠️ Total Findings: {report_data.get('summary', {}).get('total_findings', 0)}\n")
+            print(f"  [SUCCESS] Saved report: {output_path}")
+            print(f"  Vertical: {report_data.get('vertical')}")
+            print(f"  Total Findings: {report_data.get('summary', {}).get('total_findings', 0)}\n")
         else:
-            print(f"   ❌ Audit failed for {site}: {proc.stderr}\n")
+            print(f"  [FAILED] Audit failed for {site}: {proc.stderr}\n")
             
     except subprocess.TimeoutExpired:
-        print(f"   ⏱️ Timed out auditing {site}\n")
+        print(f"  [TIMEOUT] Timed out auditing {site}\n")
     except Exception as e:
-        print(f"   ⚠️ Error: {str(e)}\n")
+        print(f"  [ERROR] {str(e)}\n")
 
-print(f"🎉 Batch audit complete! Reports saved to ./{OUTPUT_DIR}/")
+print(f"Batch audit execution complete. Reports saved to ./{OUTPUT_DIR}/")

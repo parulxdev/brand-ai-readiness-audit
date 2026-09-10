@@ -1,0 +1,77 @@
+{
+  "site": "www.gov.uk",
+  "audited_at": "2026-09-10T07:07:36Z",
+  "vertical": "general",
+  "summary": {
+    "total_findings": 5,
+    "critical": 0,
+    "high": 5,
+    "medium": 0
+  },
+  "findings": [
+    {
+      "id": "DISC-001",
+      "title": "Missing Machine-Readable /llms.txt Endpoint",
+      "severity": "high",
+      "evidence": "GET https://www.gov.uk/llms.txt returned HTTP status FAILED",
+      "suggested_action": {
+        "summary": "Deploy an /llms.txt file providing clean Markdown context for LLM agents",
+        "priority": "high",
+        "impact": "Improves RAG parsing efficiency for AI assistants like Perplexity and ChatGPT",
+        "code_snippet": "# Brand Context\n> Summary of primary product line and key technical specifications.\n\n## Key Documents\n- [Product Catalog](/catalog.md)\n- [API Specs](/api.md)"
+      }
+    },
+    {
+      "id": "DISC-003",
+      "title": "Missing Schema.org Entity Metadata (Brand/ItemList JSON-LD)",
+      "severity": "high",
+      "evidence": "0 JSON-LD blocks containing 'Brand', 'Organization', or 'ItemList' schemas were found",
+      "suggested_action": {
+        "summary": "Embed structured Schema.org JSON-LD to assist entity resolution",
+        "priority": "high",
+        "impact": "Helps AI crawlers extract authoritative entity relationships and product collections",
+        "code_snippet": "<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Brand\",\n  \"name\": \"BrandName\",\n  \"url\": \"https://example.com\"\n}\n</script>"
+      }
+    },
+    {
+      "id": "FRESH-002",
+      "title": "Missing Schema.org dateModified Provenance Timestamp",
+      "severity": "high",
+      "evidence": "JSON-LD graph contains no 'dateModified' attribute to verify factual recency",
+      "suggested_action": {
+        "summary": "Add ISO 8601 'dateModified' property to Organization/Product JSON-LD",
+        "priority": "high",
+        "impact": "Overrides legacy cached vector embeddings in AI model memory with authoritative timestamps",
+        "code_snippet": "\"dateModified\": \"2026-09-10T00:00:00Z\""
+      }
+    },
+    {
+      "id": "FRESH-003",
+      "title": "Deficit in Cross-Domain Corroboration Graph (Missing Wikidata sameAs)",
+      "severity": "high",
+      "evidence": "Found 0 sameAs links, but 0 point to Wikidata, Wikipedia, or Crunchbase",
+      "suggested_action": {
+        "summary": "Add 'sameAs' array pointing to verified Wikidata and Crunchbase entity IDs",
+        "priority": "high",
+        "impact": "Increases cross-node consensus score, enabling AI models to validate entity rebranding",
+        "code_snippet": "\"sameAs\": [\n  \"https://www.wikidata.org/wiki/Q12345\",\n  \"https://www.crunchbase.com/organization/brand\"\n]"
+      }
+    },
+    {
+      "id": "ENGAGE-001",
+      "title": "Stateless Referral Routing (Missing AI Referrer Context Bridge)",
+      "severity": "high",
+      "evidence": "No static DOM scripts or Edge header inspect rules detected for AI referrer domains (e.g., chatgpt.com, perplexity.ai).",
+      "suggested_action": {
+        "summary": "Deploy Edge Middleware / Frontend Context Bridge to inspect Referer headers and render personalized banners.",
+        "priority": "high",
+        "impact": "Eliminates state loss when users click citations, preserving pre-conditioned intent upon site entry.",
+        "code_snippet": "if (document.referrer.includes('chatgpt.com')) {\n  showIntentBanner('Welcome! Here is the Velocity X9 technical summary you asked ChatGPT about.');\n}"
+      }
+    }
+  ],
+  "proactive_recommendations": [
+    "Deploy a root /llms.txt and /llms-full.txt markdown index to provide RAG systems with clean brand context.",
+    "Include high-authority sameAs links (e.g., Wikidata, Wikipedia, Crunchbase) inside Schema.org/Organization JSON-LD markup."
+  ]
+}

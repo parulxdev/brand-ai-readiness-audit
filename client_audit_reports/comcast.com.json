@@ -1,0 +1,16 @@
+{
+  "site": "www.comcast.com",
+  "audited_at": "2026-09-10T06:40:51Z",
+  "vertical": "general",
+  "summary": {
+    "total_findings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0
+  },
+  "findings": [],
+  "proactive_recommendations": [
+    "Deploy a root /llms.txt and /llms-full.txt markdown index to provide RAG systems with clean brand context.",
+    "Include high-authority sameAs links (e.g., Wikidata, Wikipedia, Crunchbase) inside Schema.org/Organization JSON-LD markup."
+  ]
+}
