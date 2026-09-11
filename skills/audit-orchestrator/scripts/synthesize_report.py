@@ -16,6 +16,14 @@ from datetime import datetime, timezone
 # Root directory helper
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
 
+# Severity order for prioritization (lower number = higher priority)
+SEVERITY_ORDER = {
+    "critical": 0,
+    "high": 1,
+    "medium": 2,
+    "low": 3
+}
+
 
 def run_subskill_script(script_path, target_url, timeout=30):
     """
@@ -107,6 +115,12 @@ def synthesize_audit(target_url):
         if title not in seen_titles:
             seen_titles.add(title)
             deduped_findings.append(finding)
+
+    # 4b. Prioritize by severity (Critical -> High -> Medium -> Low)
+    deduped_findings = sorted(
+        deduped_findings,
+        key=lambda f: SEVERITY_ORDER.get(f.get("severity", "medium").lower(), 3)
+    )
 
     # 5. Compute Severity Summary Counts
     severity_counts = {
