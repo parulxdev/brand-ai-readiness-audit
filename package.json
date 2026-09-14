@@ -1,0 +1,7 @@
+{
+  "name": "brand-ai-readiness-audit",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Optional Node renderer for JS-render-gap detection.",
+  "optionalDependencies": { "jsdom": "^24.0.0" }
+}

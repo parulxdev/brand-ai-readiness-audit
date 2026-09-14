@@ -1,40 +1,61 @@
 ---
 name: audit-orchestrator
-description: Entrypoint skill for the Brand AI-Readiness Audit Marketplace. Orchestrates sub-skills to audit any domain for off-site AI discoverability, fact corroboration/provenance, and on-site context retention. Emits a unified, strict JSON audit report.
+description: ENTRYPOINT skill. Composes discovery-audit, freshness-corroboration, engagement-audit, vertical-intelligence, entity-dominance, and prioritization-engine (which inlines a mechanism-keyed causal-lift estimator) into one JSON report. Detects off-site discoverability gaps and on-site engagement gaps, scores each finding on impact × confidence × effort × urgency, assigns waves, and emits a three-wave roadmap plus proactive recommendations. Use whenever a full audit report for a URL is requested.
 license: MIT
+allowed-tools: [python_interpreter]
 ---
 
-# Audit Orchestrator Skill
+## When to use
 
-## Overview
-This entrypoint skill receives an audit request for a target URL or domain, invokes the sub-skill detection scripts in isolated subprocesses, applies prioritization matrix logic, and emits the final consolidated JSON audit report adhering to the strict project schema.
+Invoked by the evaluation harness when a full audit report for a target
+website is requested. It is the sole entrypoint declared in
+`marketplace.json`.
 
 ## Inputs
-- `url` (string, required): Target URL or root domain to audit (e.g., `https://example.com`).
+
+- `target_url` (string, required) — full URI or bare domain.
+- `budget_seconds` (int, optional, default 180) — soft deadline; safe
+  fetches abort when exhausted.
+- `include_errors` (bool, optional, default True) — include `errors` and
+  `diagnostics` arrays in the emitted report.
 
 ## Procedure
 
-1. **Input Normalization:**
-   Ensure the input URL contains a valid HTTP/HTTPS scheme and extract the root domain.
-
-2. **Vertical Intelligence Check:**
-   Execute `skills/vertical-intelligence/scripts/detect_vertical.py` to classify the target domain into one of the supported verticals: `e-commerce`, `airline`, `saas`, `hospitality`, `news`, or `general`.
-
-3. **Sub-Skill Audits Execution:**
-   Run each sub-skill script in a sandboxed, isolated subprocess with a strict 30-second timeout:
-   - **Discovery Audit:** `skills/discovery-audit/scripts/check_discovery.py`
-   - **Freshness & Provenance Audit:** `skills/freshness-corroboration/scripts/check_freshness.py`
-   - **Engagement & Spatial Audit:** `skills/engagement-audit/scripts/check_engagement.py`
-
-4. **Synthesis & Prioritization:**
-   Execute `skills/audit-orchestrator/scripts/synthesize_report.py` to:
-   - Aggregate findings from all sub-skills.
-   - Deduplicate findings by title and evidence signatures.
-   - Assign severity classifications (`critical`, `high`, `medium`, `low`).
-   - Append non-defect proactive recommendations based on industry vertical.
-
-5. **Output Delivery:**
-   Emit the strict JSON response payload directly to standard output.
+1. `clear_cache()` and `set_deadline(now + budget_seconds)`.
+2. Normalize `target_url`; parse origin; `get_robots().load(origin)`.
+3. Classify vertical via `vertical-intelligence`.
+4. Run detection skills in sequence, collecting findings:
+   `discovery-audit`, `freshness-corroboration`, `engagement-audit`,
+   `entity-dominance`.
+5. Enforce the finding schema — every finding must have
+   `id`, `title`, `severity`, `evidence`, `mechanism`, and a
+   `suggested_action` with `summary` and `priority`. Deduplicate by
+   `(id, title, sha1(evidence)[:12])`.
+6. Collect page signals via `_page_signals_from` (JSON-LD present,
+   sectioning tags, quantified facts, visible date, robots.txt presence,
+   sitemap presence).
+7. Extract `freshness_velocity` from the `FRESH-012` evidence if present.
+8. Invoke `prioritization-engine.prioritize(findings, signals=...,
+   vertical=..., freshness_velocity=...)`. This assigns each finding
+   `mechanism`-keyed `causal_lift`, `effort`, `priority_score`, and
+   `wave`, then builds the enriched roadmap.
+9. Emit the audit report against the schema in
+   `references/output_schema.md`.
 
 ## Output
-A strict JSON object following the format defined in the root specification, containing `site`, `audited_at`, `vertical`, `summary`, `findings`, and `proactive_recommendations`.
+
+A single JSON object with the required top-level fields `site`,
+`audited_at`, `summary`, `findings`, plus the additive fields `vertical`,
+`vertical_confidence`, `roadmap`, `proactive_recommendations`, and
+(when `include_errors` is True) `errors` and `diagnostics`.
+
+## References
+
+- `references/output_schema.md` — the full report schema and vocabulary.
+
+## Allowed tools
+
+- Python interpreter (stdlib only).
+- Standard shell (`curl`, `grep`) for diagnostics if needed.
+- Optional: `node` — only used by `discovery-audit` for the JS-render
+  gap; degrades gracefully if absent.
