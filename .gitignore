@@ -18,3 +18,6 @@ Thumbs.db
 *.log
 .env
 .env.*
+
+# Ignore client audit report outputs
+client_audit_reports/
